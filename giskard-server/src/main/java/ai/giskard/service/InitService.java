@@ -28,7 +28,6 @@ import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -132,6 +131,7 @@ public class InitService {
             DataUploadParamsDTO.builder()
                 .projectKey("zillow")
                 .name("Zillow data")
+                .featureTypes(zillowFeatureTypes)
                 .target("SalePrice")
                 .build()
         ),
@@ -167,9 +167,6 @@ public class InitService {
         )
     );
 
-    //public Map<String, String> projects = Arrays.stream(mockKeys).collect(Collectors.toMap(String::toLowerCase, name -> String.format("%s's project", StringUtils.capitalize(name.toLowerCase()))));
-
-
     public String getUserName(String key) {
         return users.get(key);
     }
@@ -187,6 +184,7 @@ public class InitService {
      * Initializing first authorities, mock users, and mock projects
      */
     @EventListener(ApplicationReadyEvent.class)
+    @Transactional
     public void init() {
         initAuthorities();
         initUsers();
@@ -197,7 +195,6 @@ public class InitService {
     /**
      * Initialising users with different authorities
      */
-    @Transactional
     public void initUsers() {
         Arrays.stream(mockKeys).forEach(key -> {
             if (userRepository.findOneByLogin(key.toLowerCase()).isEmpty()) {
@@ -246,7 +243,6 @@ public class InitService {
     /**
      * Initialized with default projects
      */
-    @Transactional
     public void initProjects() {
         projects.forEach((key, config) -> saveProject(key, config.creator));
     }
@@ -277,7 +273,7 @@ public class InitService {
         ProjectConfig config = projects.get(projectKey);
         Project project = projectRepository.getOneByKey(projectKey);
         Resource dsResource = resourceLoader.getResource("classpath:demo_projects/" + projectKey + "/dataset.csv.zst");
-        try (InputStream dsStream = Files.newInputStream(dsResource.getFile().toPath())) {
+        try (InputStream dsStream = dsResource.getInputStream()) {
             DataUploadParamsDTO dsParams = config.datasetParams;
             fileUploadService.uploadDataset(
                 project,
@@ -295,8 +291,8 @@ public class InitService {
     private void uploadModel(String projectKey) {
         Resource modelResource = resourceLoader.getResource("classpath:demo_projects/" + projectKey + "/model.pkl.zst");
         Resource requirementsResource = resourceLoader.getResource("classpath:demo_projects/" + projectKey + "/requirements.txt");
-        try (InputStream modelStream = Files.newInputStream(modelResource.getFile().toPath())) {
-            try (InputStream requirementsStream = Files.newInputStream(requirementsResource.getFile().toPath())) {
+        try (InputStream modelStream = modelResource.getInputStream()) {
+            try (InputStream requirementsStream = requirementsResource.getInputStream()) {
                 fileUploadService.uploadModel(projects.get(projectKey).modelParams, modelStream, requirementsStream);
             }
         } catch (IOException e) {
