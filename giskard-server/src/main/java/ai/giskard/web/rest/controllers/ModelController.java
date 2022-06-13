@@ -64,9 +64,9 @@ public class ModelController {
         Dataset dataset = datasetRepository.getById(datasetId);
         ExplainResponse explanations = modelService.explain(model, dataset, data.getFeatures());
         ExplainResponseDTO result = new ExplainResponseDTO();
-        explanations.getExplanationsMap().forEach((label, perFeatureExplanations) -> {
-            result.getExplanations().put(label, perFeatureExplanations.getPerFeatureMap());
-        });
+        explanations.getExplanationsMap().forEach((label, perFeatureExplanations) ->
+            result.getExplanations().put(label, perFeatureExplanations.getPerFeatureMap())
+        );
         return result;
     }
 
@@ -85,12 +85,13 @@ public class ModelController {
         return new MessageDTO("Model {} has been deleted", modelId);
     }
 
-    @PostMapping("models/{modelId}/predict")
+    @PostMapping("models/{modelId}/{datasetId}/predict")
     @Transactional
-    public PredictionDTO predict(@PathVariable @NotNull Long modelId, @RequestBody @NotNull PredictionInputDTO data) throws IOException {
+    public PredictionDTO predict(@PathVariable @NotNull Long modelId,  @PathVariable @NotNull Long datasetId, @RequestBody @NotNull PredictionInputDTO data) throws IOException {
         ProjectModel model = modelRepository.getById(modelId);
+        Dataset dataset = datasetRepository.getById(datasetId);
         permissionEvaluator.validateCanReadProject(model.getProject().getId());
-        RunModelForDataFrameResponse result = modelService.predict(model, data.getFeatures());
+        RunModelForDataFrameResponse result = modelService.predict(model, dataset, data.getFeatures());
         Map<String, Float> allPredictions = new HashMap<>();
         if (ModelType.isClassification(model.getModelType())) {
             result.getAllPredictions().getRows(0).getColumnsMap().forEach((label, proba) ->

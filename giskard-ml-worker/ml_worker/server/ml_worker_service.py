@@ -11,10 +11,9 @@ from generated.ml_worker_pb2 import RunTestRequest, TestResultMessage, RunModelR
 from generated.ml_worker_pb2_grpc import MLWorkerServicer
 from ml_worker.core.model_explanation import explain, text_explanation_prediction_wrapper, parse_text_explainer_response
 from ml_worker.exceptions.IllegalArgumentError import IllegalArgumentError
-from ml_worker.utils.grpc_mapper import deserialize_model, deserialize_dataset
+from ml_worker.utils.grpc_mapper import deserialize_model, deserialize_dataset, feature_types_to_pdtypes
 
 logger = logging.getLogger()
-
 
 class MLWorkerServiceImpl(MLWorkerServicer):
     def __init__(self) -> None:
@@ -73,7 +72,8 @@ class MLWorkerServiceImpl(MLWorkerServicer):
 
     def runModelForDataFrame(self, request: RunModelForDataFrameRequest, context):
         model = deserialize_model(request.model)
-        df = pd.DataFrame([r.columns for r in request.dataframe.rows])
+        feature_types = {k: feature_types_to_pdtypes[v] for k, v in request.feature_types.items()}
+        df = pd.DataFrame([r.columns for r in request.dataframe.rows]).astype(feature_types)
         predictions = model.run_predict(df)
         if model.model_type == "classification":
             return RunModelForDataFrameResponse(all_predictions=self.pandas_df_to_proto_df(predictions.all_predictions),
@@ -86,8 +86,8 @@ class MLWorkerServiceImpl(MLWorkerServicer):
         import numpy as np
         model = deserialize_model(request.model)
         dataset = deserialize_dataset(request.dataset)
-        prediction_results = model.run_predict(dataset.df)
-
+        feature_types = {k: feature_types_to_pdtypes[v] for k, v in dataset.feature_types.items()}
+        prediction_results = model.run_predict(dataset.df.astype(feature_types))
         if model.model_type == "classification":
             results = prediction_results.all_predictions
             labels = {k: v for k, v in enumerate(model.classification_labels)}

@@ -38,11 +38,12 @@ public class ModelService {
     private final FileLocationService fileLocationService;
     private final GRPCMapper grpcMapper;
 
-    public RunModelForDataFrameResponse predict(ProjectModel model, Map<String, String> features) throws IOException {
+    public RunModelForDataFrameResponse predict(ProjectModel model, Dataset dataset, Map<String, String> features) throws IOException {
         RunModelForDataFrameResponse response;
         try (MLWorkerClient client = mlWorkerService.createClient()) {
             response = client.runModelForDataframe(
                 model,
+                dataset,
                 DataFrame.newBuilder().addRows(DataRow.newBuilder().putAllColumns(features)).build());
         }
         return response;

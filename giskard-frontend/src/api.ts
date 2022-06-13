@@ -243,7 +243,7 @@ export const api = {
         return apiV2.post<unknown, any>(`/inspection/${inspectionId}/rowsFiltered`, filter, {params: props});
     },
     async getLabelsForTarget(inspectionId: number) {
-        return await apiV2.get<unknown, string[]>(`/inspection/${inspectionId}/labels`);
+        return apiV2.get<unknown, string[]>(`/inspection/${inspectionId}/labels`);
     },
     async getProjectDatasets(id: number) {
         return axiosProject.get<unknown, DatasetDTO[]>(`/${id}/datasets`);
@@ -262,8 +262,8 @@ export const api = {
         config.headers['content-type'] = 'multipart/form-data';
         return apiV2.post<unknown, DatasetDTO>(`/project/data/upload`, formData, config);
     },
-    async predict(modelId: number, inputData: object) {
-        return apiV2.post<unknown, PredictionDTO>(`/models/${modelId}/predict`, {features: inputData});
+    async predict(modelId: number, inputData: object, datasetId:number) {
+        return apiV2.post<unknown, PredictionDTO>(`/models/${modelId}/${datasetId}/predict`, {features: inputData});
     },
 
     async prepareInspection(payload: InspectionCreateDTO) {

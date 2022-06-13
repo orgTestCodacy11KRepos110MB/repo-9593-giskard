@@ -99,6 +99,7 @@
               :classificationLabels="model.classificationLabels"
               :predictionTask="model.modelType"
               :inputData="inputData"
+              :datasetId="dataset.id"
               :modified="dirty || isInputNotOriginal"
               @result="setResult"
           />

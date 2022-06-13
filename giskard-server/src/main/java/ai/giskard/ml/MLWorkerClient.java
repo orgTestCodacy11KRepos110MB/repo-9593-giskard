@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * A java-python bridge for model execution
@@ -92,10 +93,12 @@ public class MLWorkerClient implements AutoCloseable {
         return blockingStub.explain(request);
     }
 
-    public RunModelForDataFrameResponse runModelForDataframe(ProjectModel model, DataFrame df) throws IOException {
+    public RunModelForDataFrameResponse runModelForDataframe(ProjectModel model, Dataset dataset, DataFrame df) throws IOException {
         RunModelForDataFrameRequest request = RunModelForDataFrameRequest.newBuilder()
             .setModel(grpcMapper.serialize(model))
             .setDataframe(df)
+            .putAllFeatureTypes(dataset.getFeatureTypes().entrySet()
+                .stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getName())))
             .build();
 
         return blockingStub.runModelForDataFrame(request);
